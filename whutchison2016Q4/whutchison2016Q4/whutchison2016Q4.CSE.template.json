@@ -39,6 +39,19 @@
             "type": "string",
           "minLength": 1,
           "defaultValue": "whutchison2016q4"
+        },
+      "_artifactsLocation": {
+        "type": "string",
+        "defaultValue": "https://hiscautomationdv.blob.core.windows.net/whutchison2016q4",
+        "metadata": {
+          "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+        }
+      },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
         }
     },
     "variables": {
@@ -56,7 +69,9 @@
         "vm1SubnetRef": "[concat(variables('vm1VnetID'), '/subnets/', variables('vnet1Subnet1Name'))]",
         "vm1StorageAccountContainerName": "vhds",
         "vm1NicName": "[concat(parameters('vm1Name'), 'NetworkInterface')]",
-        "pip1Name": "pip1"
+        "pip1Name": "pip1",
+        "cse1ScriptFolder": "CustomScripts",
+        "cse1ScriptFileName": "cse1.sh"
     },
     "resources": [
         {
@@ -177,7 +192,32 @@
                     ]
                 }
             },
-            "resources": []
+            "resources": [
+                {
+                    "name": "cse1",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vm1Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "cse1"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.OSTCExtensions",
+                        "type": "CustomScriptForLinux",
+                        "typeHandlerVersion": "1.4",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(parameters('_artifactsLocation'), '/', variables('cse1ScriptFolder'), '/', variables('cse1ScriptFileName'), parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat('sh ', variables('cse1ScriptFileName'))]"
+                        }
+                    }
+                }
+            ]
         },
         {
             "name": "[variables('pip1Name')]",
